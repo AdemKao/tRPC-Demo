@@ -2,6 +2,32 @@
 
 - source:https://www.youtube.com/watch?v=Lam0cYOEst8&t=235s
 
+## Final Project Structure
+
+```bash
+.
+├── READM.md
+├── package.json
+├── packages
+│   ├── api-server
+│   │   ├── index.ts
+│   │   ├── package.json
+│   │   └── tsconfig.json
+│   └── client
+│       ├── package.json
+│       ├── postcss.config.js
+│       ├── src
+│       │   ├── App.tsx
+│       │   ├── index.html
+│       │   ├── index.scss
+│       │   ├── index.ts
+│       │   └── trpc.ts
+│       ├── tailwind.config.js
+│       ├── tsconfig.json
+│       └── webpack.config.js
+└── yarn.lock
+```
+
 ## Create api-server
 
 ```bash
@@ -198,3 +224,69 @@ import { AppRouter } from "api-server";
 
 export const trpc = createReactQueryHooks<AppRouter>();
 ```
+
+## Update `App.tsx`
+
+### import package
+
+```tsx
+// client/src/App.tsx
+import React, { useState } from "react";
+import ReactDOM from "react-dom";
+import { QueryClient, QueryClientProvider } from "react-query";
+import { trpc } from "./trpc";
+```
+
+### add query client
+
+```tsx
+// client/src/App.tsx
+...
+const client = new QueryClient();
+```
+
+### add AppContent
+
+```tsx
+// client/src/App.tsx
+const AppContent = () => {
+  const hello = trpc.useQuery(["hello"]);
+  console.log("AppContent", hello);
+  return (
+    <div className="mt-10 text-3xl mx-auto max-w-6xl">
+      {hello.data && <div>{JSON.stringify(hello.data)}</div>}
+    </div>
+  );
+};
+```
+
+### change `App` to add Provider
+
+```tsx
+// client/src/App.tsx
+const App = () => {
+  // if you write ()=>{} you have to add return
+  // or you can just write ()=> trpc.
+  const [trpcClient] = useState(() =>
+    trpc.createClient({
+      url: "http://localhost:8080/trpc/",
+    })
+  );
+  // const [trpcClient] = useState(() => {
+  //   return trpc.createClient({
+  //     url: "http://localhost:8080/trpc/",
+  //   });
+  // });
+
+  return (
+    <trpc.Provider client={trpcClient!} queryClient={client}>
+      <QueryClientProvider client={client}>
+        <AppContent />
+      </QueryClientProvider>
+    </trpc.Provider>
+  );
+};
+```
+
+After finished this, you can run `yarn start`
+and open http://localhost:3000, you will see "Hello World" in the front-end
